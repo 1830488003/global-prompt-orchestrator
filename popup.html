@@ -1,0 +1,275 @@
+<div id="gpo-popup-overlay" class="gpo-overlay" style="display: none;">
+    <div id="gpo-popup" class="gpo-popup">
+        <div class="gpo-header">
+            <div class="gpo-header-main">
+                <div class="gpo-title-block">
+                    <div class="gpo-eyebrow">给小白看的提示词总览</div>
+                    <div class="gpo-title">上下文分析</div>
+                    <div id="gpo-subtitle" class="gpo-subtitle">正在等待快照</div>
+                </div>
+
+                <div class="gpo-page-switch" role="tablist" aria-label="页面切换">
+                    <button type="button" class="gpo-page-tab is-active" data-page="overview" role="tab" aria-selected="true">
+                        <span class="gpo-page-tab-title">简单总览</span>
+                        <span class="gpo-page-tab-meta">先看结论和占比</span>
+                    </button>
+                    <button type="button" class="gpo-page-tab" data-page="detail" role="tab" aria-selected="false">
+                        <span class="gpo-page-tab-title">详细信息</span>
+                        <span class="gpo-page-tab-meta">完整来源和调试细节</span>
+                    </button>
+                    <button type="button" class="gpo-page-tab" data-page="adjust" role="tab" aria-selected="false">
+                        <span class="gpo-page-tab-title">AI优化建议</span>
+                        <span class="gpo-page-tab-meta">AI分析问题并推荐插件</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="gpo-header-actions">
+                <button type="button" id="gpo-refresh" class="menu_button gpo-action-button gpo-action-button-primary gpo-desktop-primary">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span>重新读取</span>
+                </button>
+
+                <div class="gpo-action-menu-shell">
+                    <button type="button" id="gpo-more-actions" class="menu_button gpo-action-button gpo-action-button-secondary">
+                        <i class="fa-solid fa-ellipsis"></i>
+                        <span>更多操作</span>
+                    </button>
+                    <div id="gpo-action-menu" class="gpo-action-menu" style="display: none;">
+                        <button type="button" id="gpo-copy-prompt" class="gpo-action-menu-item">
+                            <i class="fa-solid fa-copy"></i>
+                            <span>复制内容</span>
+                        </button>
+                        <button type="button" id="gpo-export-snapshot" class="gpo-action-menu-item">
+                            <i class="fa-solid fa-file-export"></i>
+                            <span>保存快照</span>
+                        </button>
+                        <button type="button" id="gpo-refresh-menu" class="gpo-action-menu-item gpo-mobile-menu-item">
+                            <i class="fa-solid fa-rotate-right"></i>
+                            <span>重新读取</span>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="button" id="gpo-close-popup" class="menu_button gpo-action-button gpo-action-button-icon">
+                    <i class="fa-solid fa-xmark"></i>
+                    <span>关闭</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="gpo-page-container">
+            <div id="gpo-overview-page" class="gpo-page gpo-page-overview">
+                <div id="gpo-overview-hero" class="gpo-hero-grid"></div>
+
+                <div class="gpo-overview-grid">
+                    <section class="gpo-section gpo-section-highlight">
+                        <div class="gpo-section-header">
+                            <div>
+                                <div class="gpo-section-title">当前上下文构成</div>
+                                <div class="gpo-section-subtitle">把复杂参数翻译成一眼能看懂的几类信息</div>
+                            </div>
+                        </div>
+                        <div id="gpo-overview-composition" class="gpo-section-body"></div>
+                    </section>
+
+                    <section class="gpo-section">
+                        <div class="gpo-section-header">
+                            <div>
+                                <div class="gpo-section-title">本轮结论</div>
+                                <div class="gpo-section-subtitle">优先告诉你哪里最占上下文、哪里为空、哪里有风险</div>
+                            </div>
+                        </div>
+                        <div id="gpo-overview-insights" class="gpo-section-body"></div>
+                    </section>
+                </div>
+
+                <div class="gpo-overview-lower-grid">
+                    <section class="gpo-section">
+                        <div class="gpo-section-header">
+                            <div>
+                                <div class="gpo-section-title">主要来源排行</div>
+                                <div class="gpo-section-subtitle">按“聊天记录、世界书、角色卡”这种说法直接看懂</div>
+                            </div>
+                        </div>
+                        <div id="gpo-overview-ranking" class="gpo-section-body"></div>
+                    </section>
+
+                    <section class="gpo-section">
+                        <div class="gpo-section-header">
+                            <div>
+                                <div class="gpo-section-title">当前配置摘要</div>
+                                <div class="gpo-section-subtitle">当前用了什么预设、上下文模板、角色卡和世界书</div>
+                            </div>
+                        </div>
+                        <div id="gpo-overview-config" class="gpo-section-body"></div>
+                    </section>
+
+                    <section class="gpo-section">
+                        <div class="gpo-section-header">
+                            <div>
+                                <div class="gpo-section-title">世界书概览</div>
+                                <div class="gpo-section-subtitle">这轮命中了多少条世界书，主要打到了哪里</div>
+                            </div>
+                        </div>
+                        <div id="gpo-overview-worldinfo" class="gpo-section-body"></div>
+                    </section>
+                </div>
+            </div>
+
+            <div id="gpo-detail-page" class="gpo-page gpo-page-detail" style="display: none;">
+                <div class="gpo-detail-switch" role="tablist" aria-label="详细信息板块切换">
+                    <button type="button" class="gpo-detail-tab is-active" data-detail-tab="prompt" role="tab" aria-selected="true">发送内容</button>
+                    <button type="button" class="gpo-detail-tab" data-detail-tab="source" role="tab" aria-selected="false">详细来源</button>
+                    <button type="button" class="gpo-detail-tab" data-detail-tab="token" role="tab" aria-selected="false">上下文占比</button>
+                    <button type="button" class="gpo-detail-tab" data-detail-tab="world" role="tab" aria-selected="false">世界书</button>
+                    <button type="button" class="gpo-detail-tab" data-detail-tab="diagnostics" role="tab" aria-selected="false">诊断结果</button>
+                    <button type="button" class="gpo-detail-tab" data-detail-tab="config" role="tab" aria-selected="false">当前配置</button>
+                </div>
+
+                <div class="gpo-detail-panels">
+                    <section id="gpo-detail-panel-prompt" class="gpo-section gpo-detail-panel">
+                        <div class="gpo-section-header gpo-section-header-stack">
+                            <div>
+                                <div class="gpo-section-title">发送给 AI 的内容</div>
+                                <div class="gpo-section-subtitle">一次只看结构拆解、最终文本或消息数组中的一种</div>
+                            </div>
+                            <div class="gpo-tab-row">
+                                <button type="button" class="gpo-tab is-active" data-preview-tab="structure">结构拆解</button>
+                                <button type="button" class="gpo-tab" data-preview-tab="flat">最终文本</button>
+                                <button type="button" class="gpo-tab" data-preview-tab="messages">消息数组</button>
+                            </div>
+                        </div>
+                        <div id="gpo-preview-structure" class="gpo-preview-panel"></div>
+                        <div id="gpo-preview-flat" class="gpo-preview-panel" style="display: none;"></div>
+                        <div id="gpo-preview-messages" class="gpo-preview-panel" style="display: none;"></div>
+                    </section>
+
+                    <section id="gpo-detail-panel-source" class="gpo-section gpo-detail-panel" style="display: none;">
+                        <div class="gpo-section-header">
+                            <div>
+                                <div class="gpo-section-title">详细来源</div>
+                                <div class="gpo-section-subtitle">完整列出哪些内容进入了最终发送给 AI 的上下文</div>
+                            </div>
+                        </div>
+                        <div id="gpo-source-tree" class="gpo-section-body"></div>
+                    </section>
+
+                    <section id="gpo-detail-panel-token" class="gpo-section gpo-detail-panel" style="display: none;">
+                        <div class="gpo-section-header">
+                            <div>
+                                <div class="gpo-section-title">上下文占比</div>
+                                <div class="gpo-section-subtitle">只看预算、占比和主要来源消耗，不和别的板块挤在一起</div>
+                            </div>
+                        </div>
+                        <div id="gpo-token-panel" class="gpo-section-body"></div>
+                    </section>
+
+                    <section id="gpo-detail-panel-world" class="gpo-section gpo-detail-panel" style="display: none;">
+                        <div class="gpo-section-header">
+                            <div>
+                                <div class="gpo-section-title">世界书状态</div>
+                                <div class="gpo-section-subtitle">分开看角色卡主世界书、全局启用集和本轮激活条目</div>
+                            </div>
+                        </div>
+                        <div id="gpo-worldbook-summary-panel" class="gpo-section-body"></div>
+                        <div id="gpo-worldinfo-panel" class="gpo-section-body"></div>
+                    </section>
+
+                    <section id="gpo-detail-panel-diagnostics" class="gpo-section gpo-detail-panel" style="display: none;">
+                        <div class="gpo-section-header">
+                            <div>
+                                <div class="gpo-section-title">诊断结果</div>
+                                <div class="gpo-section-subtitle">预算风险、来源缺失、命中为空等提示</div>
+                            </div>
+                        </div>
+                        <div id="gpo-diagnostics-panel" class="gpo-section-body"></div>
+                    </section>
+
+                    <section id="gpo-detail-panel-config" class="gpo-section gpo-detail-panel" style="display: none;">
+                        <div class="gpo-section-header">
+                            <div>
+                                <div class="gpo-section-title">当前配置</div>
+                                <div class="gpo-section-subtitle">接口类型、预设、角色卡、用户设定和世界书归属</div>
+                            </div>
+                        </div>
+                        <div id="gpo-config-summary" class="gpo-section-body"></div>
+                        <div id="gpo-control-panel" class="gpo-section-body gpo-control-panel"></div>
+                    </section>
+                </div>
+            </div>
+
+            <div id="gpo-adjust-page" class="gpo-page gpo-page-adjust" style="display: none;">
+                <div class="gpo-adjust-grid">
+                    <section id="gpo-adjust-rules-section" class="gpo-section gpo-adjust-section">
+                        <div class="gpo-section-header">
+                            <div>
+                                <div class="gpo-section-title">规则建议</div>
+                                <div class="gpo-section-subtitle">先用本地规则判断当前最值得处理的问题</div>
+                            </div>
+                        </div>
+                        <div id="gpo-adjust-rules-panel" class="gpo-section-body gpo-adjust-slot"></div>
+                    </section>
+
+                    <section id="gpo-adjust-ai-section" class="gpo-section gpo-adjust-section">
+                        <div class="gpo-section-header">
+                            <div>
+                                <div class="gpo-section-title">AI 优化建议</div>
+                                <div class="gpo-section-subtitle">基于插件整理过的快照摘要，请当前连接的 AI 给出调整顺序</div>
+                            </div>
+                        </div>
+                        <div id="gpo-adjust-ai-panel" class="gpo-section-body gpo-adjust-slot"></div>
+                    </section>
+                </div>
+
+                <section id="gpo-adjust-guide-section" class="gpo-section gpo-adjust-section">
+                    <div class="gpo-section-header">
+                        <div>
+                            <div class="gpo-section-title">去哪里调整</div>
+                            <div class="gpo-section-subtitle">根据建议快速跳到预设、世界书、角色卡或上下文查看位置</div>
+                        </div>
+                    </div>
+                    <div id="gpo-adjust-guide-panel" class="gpo-section-body"></div>
+                </section>
+
+                <div class="gpo-adjust-grid gpo-adjust-grid-secondary">
+                    <section id="gpo-adjust-preset-section" class="gpo-section gpo-adjust-section">
+                        <div class="gpo-section-header">
+                            <div>
+                                <div class="gpo-section-title">提示词预设</div>
+                                <div class="gpo-section-subtitle">保留一个高频切换入口，方便验证建议</div>
+                            </div>
+                        </div>
+                        <div id="gpo-adjust-preset-panel" class="gpo-section-body gpo-adjust-slot"></div>
+                    </section>
+
+                    <section class="gpo-section gpo-adjust-section">
+                        <div class="gpo-section-header">
+                            <div>
+                                <div class="gpo-section-title">当前观察重点</div>
+                                <div class="gpo-section-subtitle">优先看高频调试资产，而不是搬运全部设置</div>
+                            </div>
+                        </div>
+                        <div id="gpo-adjust-focus-panel" class="gpo-section-body gpo-adjust-slot"></div>
+                    </section>
+                </div>
+
+                <section id="gpo-adjust-worldbook-section" class="gpo-section gpo-adjust-section gpo-adjust-worldbook-section">
+                    <div class="gpo-section-header">
+                        <div>
+                            <div class="gpo-section-title">全局世界书启用集</div>
+                            <div class="gpo-section-subtitle">建议只会指路，不会自动切换；需要时你可以在这里手动验证</div>
+                        </div>
+                    </div>
+                    <div class="gpo-section-body gpo-adjust-worldbook">
+                        <div class="gpo-adjust-worldbook-hint">多选区域将由脚本填入可用世界书。切换后请重新读取快照，再观察建议是否变化。</div>
+                        <div class="gpo-adjust-worldbook-picker">
+                            <select id="gpo-adjust-worldbook-multiselect" class="gpo-adjust-multiselect" multiple size="8" aria-label="全局世界书多选区域"></select>
+                        </div>
+                        <div id="gpo-adjust-worldbook-panel" class="gpo-adjust-slot gpo-adjust-worldbook-panel"></div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
