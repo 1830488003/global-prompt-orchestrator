@@ -43,6 +43,36 @@
     margin: 10px 0;
 }
 
+.gpo-settings-panel .gpo-settings-version {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.gpo-settings-panel .gpo-settings-version-line {
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.gpo-settings-panel .gpo-settings-update-guide {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(246, 195, 86, 0.22);
+    background: rgba(246, 195, 86, 0.08);
+}
+
+.gpo-settings-panel .gpo-settings-update-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #f6c356;
+}
+
+.gpo-settings-panel .gpo-settings-update-body {
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
 .gpo-settings-panel .gpo-settings-note {
     font-size: 12px;
     line-height: 1.6;

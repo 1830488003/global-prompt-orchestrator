@@ -23,6 +23,8 @@ import { selected_world_info, world_info } from '../../../../scripts/world-info.
 
 jQuery(async () => {
     const extensionName = 'third-party/global-prompt-orchestrator';
+    const extensionRepoOwner = '1830488003';
+    const extensionRepoName = 'global-prompt-orchestrator';
     const settingsKey = 'global_prompt_orchestrator';
     const buttonId = 'gpo-floating-button';
     const overlayId = '#gpo-popup-overlay';
@@ -328,6 +330,14 @@ jQuery(async () => {
         saveSettingsDebounced();
     }
 
+    function getContextSafe() {
+        try {
+            return window.SillyTavern?.getContext?.() || null;
+        } catch {
+            return null;
+        }
+    }
+
     function resolveExtensionFolderPath() {
         const currentScript = Array.from(document.scripts).find((script) => {
             const src = script?.src || script?.getAttribute?.('src') || '';
@@ -350,6 +360,125 @@ jQuery(async () => {
         }
         return response.text();
     }
+
+    const Updater = {
+        gitRepoOwner: extensionRepoOwner,
+        gitRepoName: extensionRepoName,
+        currentVersion: '0.0.0',
+        latestVersion: '0.0.0',
+
+        async fetchRawFileFromGitHub(filePath) {
+            const url = `https://raw.githubusercontent.com/${this.gitRepoOwner}/${this.gitRepoName}/main/${filePath}`;
+            const response = await fetch(url, { cache: 'no-cache' });
+            if (!response.ok) {
+                throw new Error(`获取 ${filePath} 失败：${response.statusText}`);
+            }
+            return response.text();
+        },
+
+        parseVersion(content) {
+            try {
+                return JSON.parse(content).version || '0.0.0';
+            } catch {
+                return '0.0.0';
+            }
+        },
+
+        compareVersions(v1, v2) {
+            const parts1 = String(v1 || '0.0.0').split('.').map(Number);
+            const parts2 = String(v2 || '0.0.0').split('.').map(Number);
+            for (let index = 0; index < Math.max(parts1.length, parts2.length); index++) {
+                const p1 = parts1[index] || 0;
+                const p2 = parts2[index] || 0;
+                if (p1 > p2) return 1;
+                if (p1 < p2) return -1;
+            }
+            return 0;
+        },
+
+        async performUpdate() {
+            const context = getContextSafe();
+            if (!context?.common?.getRequestHeaders) {
+                toastr.error('系统未就绪，请稍后重试', '上下文分析');
+                return;
+            }
+
+            toastr.info('正在开始更新...', '上下文分析');
+            try {
+                const response = await fetch('/api/extensions/update', {
+                    method: 'POST',
+                    headers: context.common.getRequestHeaders(),
+                    body: JSON.stringify({ extensionName }),
+                });
+
+                const resultText = await response.text();
+                let resultObject;
+                try {
+                    resultObject = JSON.parse(resultText);
+                } catch {
+                    resultObject = { message: resultText };
+                }
+
+                if (!response.ok) {
+                    throw new Error(resultObject.message || `HTTP ${response.status}: ${resultText}`);
+                }
+
+                toastr.success('更新成功，正在刷新页面...', '上下文分析');
+                window.setTimeout(() => window.location.reload(true), 1000);
+            } catch (error) {
+                console.error(`[${extensionName}] update failed`, error);
+                toastr.error(`更新失败：${error.message || error}`, '上下文分析');
+            }
+        },
+
+        async checkForUpdates(isManual = false) {
+            const $checkButton = $('#gpo-check-update');
+            const $updateGuide = $('#gpo-update-guide');
+            const $newVersionDisplay = $('#gpo-new-version-display');
+            const $updateIndicator = $('#gpo-update-indicator');
+
+            if (isManual) {
+                $checkButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> 检查中...');
+            }
+
+            try {
+                const localManifestText = await fetchAssetText(`manifest.json?t=${Date.now()}`);
+                this.currentVersion = this.parseVersion(localManifestText);
+                $('#gpo-current-version').text(this.currentVersion);
+
+                const remoteManifestText = await this.fetchRawFileFromGitHub('manifest.json');
+                this.latestVersion = this.parseVersion(remoteManifestText);
+
+                if (this.compareVersions(this.latestVersion, this.currentVersion) > 0) {
+                    $updateIndicator.show();
+                    $newVersionDisplay.text(this.latestVersion);
+                    $updateGuide.show();
+                    $checkButton.prop('disabled', false).html('<i class="fa-solid fa-cloud-arrow-up"></i> 立即更新');
+                    if (isManual) {
+                        toastr.warning(`发现新版本 ${this.latestVersion}，点击“立即更新”可直接更新`, '上下文分析');
+                    }
+                } else {
+                    $updateIndicator.hide();
+                    $updateGuide.hide();
+                    $checkButton.prop('disabled', false).html('<i class="fa-solid fa-cloud-arrow-down"></i> 检查更新');
+                    if (isManual) {
+                        toastr.info('当前已是最新版本', '上下文分析');
+                    }
+                }
+            } catch (error) {
+                console.error(`[${extensionName}] check updates failed`, error);
+                if (isManual) {
+                    toastr.error(`检查更新失败：${error.message || error}`, '上下文分析');
+                }
+            } finally {
+                if (isManual) {
+                    if (!$updateGuide.is(':visible')) {
+                        $checkButton.prop('disabled', false).html('<i class="fa-solid fa-cloud-arrow-down"></i> 检查更新');
+                    }
+                }
+            }
+        },
+    };
 
     function getActiveCharacter() {
         if (selected_group) {
@@ -2466,6 +2595,14 @@ jQuery(async () => {
         });
 
         $('#gpo-open-manager').on('click', openPopup);
+        $('#gpo-check-update').on('click', async () => {
+            if ($('#gpo-update-guide').is(':visible')) {
+                await Updater.performUpdate();
+                return;
+            }
+
+            await Updater.checkForUpdates(true);
+        });
         $('#gpo-refresh-from-settings').on('click', () => void refreshSnapshot());
         $('#gpo-refresh').on('click', () => void refreshSnapshot());
         $('#gpo-refresh-menu').on('click', () => {
@@ -2628,6 +2765,7 @@ jQuery(async () => {
         bindDomEvents();
         bindRuntimeEvents();
         ensureFloatingButton();
+        await Updater.checkForUpdates(false);
         state.page = getSettingsRoot().defaultPage || 'overview';
         state.lastSnapshot = await buildSnapshot();
         state.subtitle = state.lastSnapshot ? `已加载缓存快照 · ${state.lastSnapshot.routeLabel}` : '等待你刷新当前快照';
