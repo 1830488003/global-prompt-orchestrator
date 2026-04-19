@@ -352,13 +352,44 @@ jQuery(async () => {
         return src.replace(/\/index\.js(?:\?.*)?$/, '');
     }
 
+    function getExtensionFolderCandidates() {
+        const resolvedPath = resolveExtensionFolderPath();
+        const candidates = [
+            resolvedPath,
+            '/scripts/extensions/third-party/global-prompt-orchestrator',
+            'scripts/extensions/third-party/global-prompt-orchestrator',
+        ].filter(Boolean);
+
+        return [...new Set(candidates.map((item) => String(item).replace(/\/+$/, '')))];
+    }
+
     async function fetchAssetText(fileName) {
-        const basePath = resolveExtensionFolderPath();
-        const response = await fetch(`${basePath}/${fileName}?v=${Date.now()}`, { cache: 'no-cache' });
-        if (!response.ok) {
-            throw new Error(`加载扩展资源失败：${fileName}`);
+        const errors = [];
+        const candidates = getExtensionFolderCandidates();
+
+        for (const basePath of candidates) {
+            const url = `${basePath}/${fileName}?v=${Date.now()}`;
+            try {
+                const response = await fetch(url, { cache: 'no-cache' });
+                if (response.ok) {
+                    return await response.text();
+                }
+                errors.push(`${url} -> HTTP ${response.status}`);
+            } catch (error) {
+                errors.push(`${url} -> ${error.message || error}`);
+            }
         }
-        return response.text();
+
+        throw new Error(`加载扩展资源失败：${fileName}\n${errors.join('\n')}`);
+    }
+
+    async function safeBuildSnapshot() {
+        try {
+            return await buildSnapshot();
+        } catch (error) {
+            console.warn(`[${extensionName}] buildSnapshot failed`, error);
+            return null;
+        }
     }
 
     const Updater = {
@@ -2338,7 +2369,7 @@ jQuery(async () => {
             state.latestOpenAiChat = null;
             state.latestWorldInfoScan = null;
             await Generate('normal', {}, true);
-            state.lastSnapshot = await buildSnapshot();
+            state.lastSnapshot = await safeBuildSnapshot();
             state.subtitle = state.lastSnapshot
                 ? `快照已更新 · ${state.lastSnapshot.routeLabel}`
                 : 'dry-run 已完成，但没有抓到可展示的快照';
@@ -2735,13 +2766,25 @@ jQuery(async () => {
         eventSource.on(event_types.WORLD_INFO_ACTIVATED, handleWorldInfoActivated);
         eventSource.on(event_types.CHAT_CHANGED, async () => {
             clearAiSuggestion();
-            state.lastSnapshot = await buildSnapshot();
+            if (!state.popupOpen) {
+                state.lastSnapshot = null;
+                state.subtitle = '聊天已切换，等你打开面板后再读取快照';
+                return;
+            }
+
+            state.lastSnapshot = await safeBuildSnapshot();
             state.subtitle = state.lastSnapshot ? `快照已同步 · ${state.lastSnapshot.routeLabel}` : '切换聊天后暂无快照';
             renderAll();
         });
         eventSource.on(event_types.MAIN_API_CHANGED, async () => {
             clearAiSuggestion();
-            state.lastSnapshot = await buildSnapshot();
+            if (!state.popupOpen) {
+                state.lastSnapshot = null;
+                state.subtitle = `当前接口已切换为 ${main_api === 'openai' ? '聊天接口（OpenAI）' : '文本接口（非 OpenAI）'}`;
+                return;
+            }
+
+            state.lastSnapshot = await safeBuildSnapshot();
             state.subtitle = `当前接口已切换为 ${main_api === 'openai' ? '聊天接口（OpenAI）' : '文本接口（非 OpenAI）'}`;
             renderAll();
         });
@@ -2765,11 +2808,11 @@ jQuery(async () => {
         bindDomEvents();
         bindRuntimeEvents();
         ensureFloatingButton();
-        await Updater.checkForUpdates(false);
         state.page = getSettingsRoot().defaultPage || 'overview';
-        state.lastSnapshot = await buildSnapshot();
-        state.subtitle = state.lastSnapshot ? `已加载缓存快照 · ${state.lastSnapshot.routeLabel}` : '等待你刷新当前快照';
+        state.lastSnapshot = null;
+        state.subtitle = '等待你打开面板后读取当前快照';
         renderAll();
+        void Updater.checkForUpdates(false);
     } catch (error) {
         console.error(`[${extensionName}] init failed`, error);
         toastr.error(`上下文分析加载失败：${error.message || error}`, '上下文分析');
